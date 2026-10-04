@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+
+    <title>Overlay Editor</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="app">
+
+        <h1>Anniversary Overlay Editor</h1>
+        <h2>art by: @Andrl__</h2>
+
+        <div class="editor-layout">
+
+            <section class="editor">
+
+                <div id="crop-container">
+
+                    <img id="solid-color-bg">
+                    <img id="user-image" draggable="false">
+                    <img id="background-image" src=" ./icons/bg1.png" alt="" draggable="false">
+                    <img id="top-overlay" alt="" draggable="false">
+
+                </div>
+
+                <p class="hint">Drag to move | Scroll to zoom</p>
+
+            </section>
+
+            <aside class="selection-controls">
+
+                <section class="controls">
+                    <label for="image-input" class="upload-button">Upload Image</label>
+                    <input type="file" id="image-input" accept="image/*">
+                </section>
+
+                <section class="selection-section">
+                    <h2>Background</h2>
+                    <div class="selection-options">
+
+                        <button class="selection-option selected" data-background="bg1">
+                            <img src=" ./icons/bg1.png" alt="Background 1">
+                        </button>
+
+                        <button class="selection-option" data-background="bg2">
+                            <img src=" ./icons/bg2.png" alt="Background 2">
+                        </button>
+
+                    </div>
+                </section>
+
+                <section class="selection-section">
+                    <h2>Event</h2>
+                    <div class="button-options">
+                        <button class="choice-button selected" data-event="anni">Anniversary</button>
+                        <button class="choice-button" data-event="bday">Birthday</button>
+                    </div>
+                </section>
+
+                <section class="selection-section">
+                    <h2>Variant</h2>
+                    <div class="button-options">
+                        <button class="choice-button selected" data-outfit="base">Base</button>
+                        <button class="choice-button" data-outfit="sailor">Sailor</button>
+                        <button class="choice-button" data-outfit="none">None</button>
+                    </div>
+                </section>
+            </aside>
+
+        </div>
+
+        <section class="download-section">
+
+            <button id="download-button" disabled>
+                Download PNG
+            </button>
+
+        </section>
+
+
+    </main>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

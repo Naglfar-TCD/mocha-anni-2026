@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Fumomos Around the World</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- MapLibre GL -->
+    <link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+
+    <!-- MapLibre GL Leaflet -->
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
+
+    <!-- csv parser -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <div id="app">
+
+        <aside id="sidebar">
+
+            <h2>Fumomos Around the World</h2>
+            <div id="subtitle">and other merch of mocha!<br>(They definitely don't have a*rtags in them)</div>
+
+            <!-- Selected pin -->
+            <div class="sidebar-section">
+
+                <div id="selected-content">
+                    <h3 id="sidebar-title">
+                        <p>Click a pin on the map to see details</p>
+                    </h3>
+                    <div id="sidebar-username"></div>
+                    <img id="sidebar-image" src=""></img>
+
+                    <div id="sidebar-location">
+                        <img id="sidebar-location-icon" src="icons/location.png"></img>
+                        <div id="sidebar-location-text"></div>
+
+
+                        <div id="sidebar-image-switcher">
+                            <button class="image-arrow" id="previmg-button" onclick="prevImg()">◄ </button>
+                            <span id="curr-img">1</span>
+                            /
+                            <span id="total-img">1</span>
+                            <button class="image-arrow" id="nextimg-button" onclick="nextImg()"> ►</button>
+                        </div>
+
+                    </div>
+
+
+                    <div id="sidebar-description"></div>
+                </div>
+
+                <!-- Progress -->
+
+                <div class="progress-container">
+                    <div class="progress-text">
+                        <span id="found-count">0</span>
+                        /
+                        <span id="total-count">0</span>
+                        Found
+                    </div>
+
+                    <label class="hide-found">
+                        <input type="checkbox" id="hide-found-checkbox">
+                        Hide Found
+                    </label>
+
+                    <div class="progress-bar">
+                        <div id="progress-fill"></div>
+                    </div>
+                </div>
+
+        </aside>
+
+
+        <!-- Map -->
+        <div id="map"></div>
+
+    </div>
+
+
+    <!-- Initialize map -->
+    <script src="initialize-map.js"></script>
+    
+    <script src="populate-pins.js"></script>
+
+</body>
