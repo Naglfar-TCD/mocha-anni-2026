@@ -15,11 +15,15 @@
 
     <!-- MapLibre GL -->
     <link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet" />
-
     <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
 
     <!-- MapLibre GL Leaflet -->
     <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
+
+    <!-- Marker Clustering -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <!-- csv parser -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
@@ -92,12 +96,33 @@
         <!-- Map -->
         <div id="map"></div>
 
+        <div id="image-modal">
+
+            <button id="modal-close" aria-label="Close image viewer">
+                &times;
+            </button>
+
+            <button id="modal-prev" class="modal-arrow" aria-label="Previous image">
+                &#10094;
+            </button>
+
+            <div id="modal-image-container">
+                <img id="modal-image" src="" alt="">
+                <div id="modal-counter">1 / 1</div>
+            </div>
+
+            <button id="modal-next" class="modal-arrow" aria-label="Next image">
+                &#10095;
+            </button>
+
+        </div>
+
     </div>
 
 
     <!-- Initialize map -->
     <script src="initialize-map.js"></script>
-    
+
     <script src="populate-pins.js"></script>
 
 </body>

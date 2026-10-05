@@ -5,7 +5,7 @@ function initializeMap() {
         maxBoundsViscosity: 0.6,
         zoom: 2,
         minZoom: 2,
-        maxZoom: 12,
+        maxZoom: 15,
         zoomControl: false,
         zoomAnimationThreshold: 3,
     });
