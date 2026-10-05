@@ -315,8 +315,9 @@ function modalNextImg() {
     document.getElementById("previmg-button").disabled = (currImg == 1);
     document.getElementById("nextimg-button").disabled = (currImg == selectedPin[6]);
 
-    if (currImg != selectedPin[6])
-    document.getElementById(`button${selectedPin[0]}`).disabled = !(currImg == selectedPin[6]);
+    if (currImg == selectedPin[6]) {
+        document.getElementById(`button${selectedPin[0]}`).disabled = false;
+    }
 }
 
 modalClose.addEventListener("click", closeImageModal);
