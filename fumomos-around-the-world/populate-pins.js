@@ -207,22 +207,34 @@ function markFound(pin, button) {
 }
 
 function showUnfoundMarker(pin) {
-    map.removeLayer(pin.marker);
-    markerCluster.addLayer(pin.marker);
+    if (map.hasLayer(pin.marker)) {
+        map.removeLayer(pin.marker);
+    }
+
+    if (!markerCluster.hasLayer(pin.marker)) {
+        markerCluster.addLayer(pin.marker);
+    }
 
     pin.marker.setOpacity(1);
     pin.marker.setZIndexOffset(0);
 }
 
 function showFoundMarker(pin) {
-    markerCluster.removeLayer(pin.marker);
+    if (markerCluster.hasLayer(pin.marker)) {
+        markerCluster.removeLayer(pin.marker);
+    }
 
     if (hideFound) {
-        map.removeLayer(pin.marker);
+        if (map.hasLayer(pin.marker)) {
+            map.removeLayer(pin.marker);
+        }
     } else {
         pin.marker.setOpacity(0.4);
         pin.marker.setZIndexOffset(-1000);
-        pin.marker.addTo(map);
+
+        if (!map.hasLayer(pin.marker)) {
+            pin.marker.addTo(map);
+        }
     }
 }
 
@@ -231,10 +243,8 @@ document.getElementById("hide-found-checkbox").addEventListener("change", functi
     hideFound = this.checked;
 
     pins.forEach(function (pin) {
-        if (pin[7] === "1" && hideFound) {
-            map.removeLayer(pin.marker);
-        } else {
-            map.addLayer(pin.marker);
+        if (pin[7] === "1") {
+            showFoundMarker(pin);
         }
     });
 });
