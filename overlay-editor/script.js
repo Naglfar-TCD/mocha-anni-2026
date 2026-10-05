@@ -111,7 +111,7 @@ cropContainer.addEventListener("wheel", function (event) {
     const imageHeight = userImage.naturalHeight;
 
     const minimumScale = Math.max(512 / imageWidth, 512 / imageHeight) * 0.25;
-    const maximumScale = minimumScale * 4;
+    const maximumScale = minimumScale * 1000;
 
     scale *= zoomFactor;
     scale = Math.max(minimumScale, Math.min(maximumScale, scale));
@@ -185,11 +185,22 @@ backgroundOptions.forEach(function (button) {
     button.addEventListener("click", function () {
 
         activeBackground = this.dataset.background;
-        backgroundImage.src = ` ./icons/${activeBackground}.png`;
 
-        backgroundOptions.forEach(function (option) {
-            option.classList.remove("selected");
-        });
+        if (activeBackground != "no-bg") {
+            backgroundImage.style.display = "inline";
+            backgroundImage.src = ` ./icons/${activeBackground}.png`;
+
+            backgroundOptions.forEach(function (option) {
+                option.classList.remove("selected");
+            });
+        } else {
+            backgroundImage.style.display = "none";
+
+            backgroundOptions.forEach(function (option) {
+                option.classList.remove("selected");
+            });
+        }
+
 
         this.classList.add("selected");
     });
