@@ -42,7 +42,6 @@ function populatePins(pins) {
             <div id="popup">
                 <h3>Sighting #${pin[0]}</h3>
                 <button class='found-button' id=button${pin[0]}
-                    style="cursor:pointer; padding: 5px 10px;">
                     ${pin[7] === "1" ? "Mark as Not Found" : "Mark as Found"}
                 </button>
             </div>

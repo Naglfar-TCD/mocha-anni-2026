@@ -204,7 +204,8 @@ hr {
 }
 
 .found-button:disabled {
-    background: #7a7c7a;
+    background: #86b3b6;
+    cursor: not-allowed;
 }
 
 .leaflet-popup-content {
