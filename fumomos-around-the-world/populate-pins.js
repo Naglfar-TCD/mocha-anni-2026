@@ -1,4 +1,3 @@
-
 'use strict';
 
 let selectedPin = null;
@@ -30,7 +29,7 @@ function csvToArray(data) {
 }
 
 const markerCluster = L.markerClusterGroup({
-    maxClusterRadius: 20,
+    maxClusterRadius: 15,
     zoomToBoundsOnClick: true,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false
