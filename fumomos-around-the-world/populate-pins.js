@@ -24,7 +24,7 @@ function csvToArray(data) {
 
 
 const markerCluster = L.markerClusterGroup({
-    maxClusterRadius: 10,
+    maxClusterRadius: 20,
     zoomToBoundsOnClick: true,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false
@@ -71,14 +71,10 @@ function populatePins(pins) {
             selectedPin = pin;
             updateSidebar(pin);
 
-            if (map.getZoom() < 4) {
-                map.panTo(
-                    [pin[4], pin[5]],
-                    {
-                        duration: 0.5,
-                        easeLinearity: 0.25
-                    }
-                );
+            if (map.getZoom() < 8) {
+                map.flyTo([pin[4], pin[5]], 8,{duration: 0.5, easeLinearity: 0.25});
+            } else if (map.getCenter().distanceTo(L.latLng(pin[4],pin[5])) > 100000) {
+                map.panTo([pin[4], pin[5]], {duration: 0.5, easeLinearity: 0.25});
             }
         });
 
