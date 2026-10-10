@@ -41,6 +41,8 @@
             <h2>Fumomos Around the World</h2>
             <div id="subtitle">and other merch of mocha!<br>(They definitely don't have a*rtags in them)</div>
 
+            <hr>
+
             <!-- Selected pin -->
             <div class="sidebar-section">
 
@@ -48,8 +50,9 @@
                     <h3 id="sidebar-title">
                         <p>Click a pin on the map to see details</p>
                     </h3>
-                    <div id="sidebar-username">Some pins may have multiple images to click through</div>
-                    <img id="sidebar-image" src=""></img>
+                    <div id="sidebar-username">You can expand images by clicking on them, or switch through them with
+                        the arrows underneath.<br><br>Some pins may have multiple images to click through!</div>
+                    <div id="sidebar-media"></div>
 
                     <div id="sidebar-location">
                         <img id="sidebar-location-icon" src="icons/location.png"></img>
@@ -96,26 +99,21 @@
         <!-- Map -->
         <div id="map"></div>
 
+
         <div id="image-modal">
+            <button id="modal-close">×</button>
 
-            <button id="modal-close" aria-label="Close image viewer">
-                &times;
-            </button>
-
-            <button id="modal-prev" class="modal-arrow" aria-label="Previous image">
-                &#10094;
-            </button>
+            <button id="modal-prev" class="modal-arrow">‹</button>
 
             <div id="modal-image-container">
-                <img id="modal-image" src="" alt="">
-                <div id="modal-counter">1 / 1</div>
+                <div id="modal-media"></div>
             </div>
 
-            <button id="modal-next" class="modal-arrow" aria-label="Next image">
-                &#10095;
-            </button>
+            <button id="modal-next" class="modal-arrow">›</button>
 
+            <span id="modal-counter">1 / 1</span>
         </div>
+
 
     </div>
 

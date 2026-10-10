@@ -1,3 +1,4 @@
+
 'use strict';
 
 let selectedPin = null;
@@ -10,18 +11,23 @@ var pinIcon = L.icon({
     iconSize: [30, 44],
     iconAnchor: [15, 44],
     popupAnchor: [0, -34]
-})
+});
 
-// pin#, name, location, description, lat/lon, # of images
+// CSV: index, username, location, description, "lat,lon", image filenames, YouTube URL, optional found status
 function csvToArray(data) {
-    const result = Papa.parse(data).data;
+    const result = Papa.parse(data, { skipEmptyLines: true }).data;
+
     return result.map(pin => {
         const coordinates = pin[4].replace(/[\[\]\(\)\s]/g, "").split(",");
-        pin.splice(4, 1, parseFloat(coordinates[0]), parseFloat(coordinates[1]))
+
+        pin.splice(4, 1, parseFloat(coordinates[0]), parseFloat(coordinates[1]));
+        pin[6] = (pin[6] || "").split("|").map(file => file.trim()).filter(Boolean);
+        pin[7] = (pin[7] || "").trim();
+        pin[8] = (pin[8] || "0").trim();
+
         return pin;
     });
 }
-
 
 const markerCluster = L.markerClusterGroup({
     maxClusterRadius: 20,
@@ -31,18 +37,19 @@ const markerCluster = L.markerClusterGroup({
 });
 
 function populatePins(pins) {
-
     pins.forEach(function (pin) {
-
-        const marker = L.marker([pin[4], pin[5]], { icon: pinIcon, riseOnHover: true });
+        const marker = L.marker([pin[4], pin[5]], {
+            icon: pinIcon,
+            riseOnHover: true
+        });
 
         pin.marker = marker;
 
-        var popupContent = `
+        const popupContent = `
             <div id="popup">
                 <h3>Sighting #${pin[0]}</h3>
-                <button class='found-button' id=button${pin[0]}
-                    ${pin[7] === "1" ? "Mark as Not Found" : "Mark as Found"}
+                <button class="found-button" id="button${pin[0]}">
+                    ${pin[8] === "1" ? "Mark as Not Found" : "Mark as Found"}
                 </button>
             </div>
         `;
@@ -50,10 +57,9 @@ function populatePins(pins) {
         marker.bindPopup(popupContent);
 
         marker.on('popupopen', function () {
-
             const button = document.getElementById(`button${pin[0]}`);
 
-            if (pin[7] === "1") {
+            if (pin[8] === "1") {
                 button.textContent = "Mark as Not Found";
                 button.classList.add("found");
             } else {
@@ -67,29 +73,47 @@ function populatePins(pins) {
         });
 
         marker.on('click', function () {
-
             selectedPin = pin;
             updateSidebar(pin);
 
             if (map.getZoom() < 8) {
-                map.flyTo([pin[4], pin[5]], 8,{duration: 0.5, easeLinearity: 0.25});
-            } else if (map.getCenter().distanceTo(L.latLng(pin[4],pin[5])) > 100000) {
-                map.panTo([pin[4], pin[5]], {duration: 0.5, easeLinearity: 0.25});
+                map.flyTo([pin[4], pin[5]], 8, {
+                    duration: 0.5,
+                    easeLinearity: 0.25
+                });
+            } else if (map.getCenter().distanceTo(L.latLng(pin[4], pin[5])) > 100000) {
+                map.panTo([pin[4], pin[5]], {
+                    duration: 0.5,
+                    easeLinearity: 0.25
+                });
             }
         });
 
-        markerCluster.addLayer(marker);
+        if (pin[8] === "1") {
+            showFoundMarker(pin);
+        } else {
+            markerCluster.addLayer(marker);
+        }
     });
 
     map.addLayer(markerCluster);
 
     document.getElementById("total-count").textContent = pins.length;
 
+    const foundCount = pins.filter(pin => pin[8] === "1").length;
+    document.getElementById("found-count").textContent = foundCount;
+    document.getElementById("progress-fill").style.width =
+        `${pins.length ? (foundCount / pins.length) * 100 : 0}%`;
 }
 
 function loadPins() {
     fetch('locations.csv')
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to load locations.csv: ${response.status}`);
+            }
+            return response.text();
+        })
         .then(csv => {
             pins = csvToArray(csv);
             populatePins(pins);
@@ -102,90 +126,178 @@ function loadPins() {
 // Update sidebar fields
 function updateSidebar(pin) {
     const locationIcon = document.getElementById("sidebar-location-icon");
-    const imageSwitcher = document.getElementById("sidebar-image-switcher");
-    const sidebarImage = document.getElementById("sidebar-image");
 
     document.getElementById("sidebar-title").textContent = `Mocha Sighting #${pin[0]}`;
-    document.getElementById("sidebar-username").textContent = (pin[1] == "" ? `Submitted by Anonymous` : `Submitted by ${pin[1]}`);
-    sidebarImage.src = `./images/${pin[0]}-1.jpg`;
-    sidebarImage.style.display = "block";
+    document.getElementById("sidebar-username").textContent =
+        pin[1] === "" ? "Submitted by Anonymous" : `Submitted by ${pin[1]}`;
 
-    // Image switching fields; start at image 1/x
-    imageSwitcher.style.display = "flex";
     currImg = 1;
-    document.getElementById("curr-img").textContent = 1;
-    document.getElementById('previmg-button').disabled = true;
+    renderSidebarMedia();
 
-    document.getElementById('nextimg-button').disabled = (currImg < selectedPin[6]) ? false : true;
-    document.getElementById(`button${pin[0]}`).disabled = (currImg < selectedPin[6] && selectedPin[7] != true) ? true : false;
+    document.getElementById("sidebar-image-switcher").style.display =
+        getMediaCount(pin) > 1 ? "flex" : "none";
 
-    document.getElementById('total-img').textContent = `${pin[6]}`;
-
-    if (pin[4] !== "") {
-        locationIcon.style.display = "flex";
-    } else {
-        locationIcon.style.display = "none";
-    }
-
+    locationIcon.style.display = pin[2] ? "flex" : "none";
     document.getElementById("sidebar-location-text").textContent = pin[2];
     document.getElementById("sidebar-description").textContent = pin[3];
 }
 
-// Handles prev image switching
+// Videos count as one media item
+function getImageCount(pin) {
+    return pin && Array.isArray(pin[6]) ? pin[6].length : 0;
+}
+
+function getMediaCount(pin) {
+    if (!pin) return 0;
+    return getImageCount(pin) + (pin[7] ? 1 : 0);
+}
+
+function getYouTubeEmbedUrl(url) {
+    if (!url) return null;
+
+    try {
+        const parsed = new URL(url);
+        let videoId = "";
+
+        if (parsed.hostname === "youtu.be") {
+            videoId = parsed.pathname.slice(1);
+        } else if (
+            parsed.hostname.endsWith("youtube.com") ||
+            parsed.hostname.endsWith("youtube-nocookie.com")
+        ) {
+            if (parsed.pathname === "/watch") {
+                videoId = parsed.searchParams.get("v") || "";
+            } else {
+                const match = parsed.pathname.match(
+                    /^\/(?:embed|shorts|live)\/([^/?]+)/
+                );
+                videoId = match ? match[1] : "";
+            }
+        }
+
+        if (!/^[\w-]+$/.test(videoId)) return null;
+
+        return `https://www.youtube-nocookie.com/embed/${videoId}`;
+    } catch {
+        return null;
+    }
+}
+
+
+function renderMedia(container, pin, mediaPosition) {
+    container.replaceChildren();
+
+    const hasVideo = Boolean(pin[7]);
+
+    // The video occupies position 1, if present.
+    if (hasVideo && mediaPosition === 1) {
+        const embedUrl = getYoutubeEmbedUrl(pin[7]);
+
+        if (!embedUrl) {
+            container.textContent = "Invalid YouTube URL.";
+            return;
+        }
+
+        const iframe = document.createElement("iframe");
+        iframe.src = embedUrl;
+        iframe.allowFullscreen = true;
+
+        container.appendChild(iframe);
+        return;
+    }
+
+    // Subtract one position for the video when determining the image.
+    const imageIndex = mediaPosition - (hasVideo ? 2 : 1);
+    const imageFile = pin[6][imageIndex];
+
+    if (!imageFile) return;
+
+    const img = document.createElement("img");
+    img.src = `./images/${imageFile}`;
+    img.alt = `${pin[0]}-${imageIndex + 1}`;
+    img.addEventListener("click", openImageModal);
+
+    container.appendChild(img);
+}
+
+function renderSidebarMedia() {
+    const container = document.getElementById("sidebar-media");
+    container.replaceChildren();
+
+    if (!selectedPin) return;
+
+    const images = selectedPin[6] || [];
+    const imageCount = images.length;
+    const videoUrl = selectedPin[7];
+
+    if (currImg < 1 || currImg > getMediaCount(selectedPin)) {
+        currImg = 1;
+    }
+
+    if (currImg <= imageCount) {
+        // Display an image.
+        const img = document.createElement("img");
+        img.id = "sidebar-image";
+        img.src = `images/${images[currImg - 1]}`;
+        img.alt = `Pin ${selectedPin[0]} image ${currImg}`;
+        img.style.cursor = "pointer";
+
+        container.appendChild(img);
+    } else if (videoUrl) {
+        // Display the YouTube video after the images.
+        const embedUrl = getYouTubeEmbedUrl(videoUrl);
+
+        if (embedUrl) {
+            const iframe = document.createElement("iframe");
+            iframe.src = embedUrl;
+            iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+            container.appendChild(iframe);
+        }
+    }
+
+    // Update the sidebar media counter and navigation.
+    document.getElementById("curr-img").textContent = currImg;
+    document.getElementById("total-img").textContent =
+        getMediaCount(selectedPin);
+
+    document.getElementById("previmg-button").disabled = currImg <= 1;
+    document.getElementById("nextimg-button").disabled =
+        currImg >= getMediaCount(selectedPin);
+}
+
 function prevImg() {
-    if (currImg > 1) {
-        currImg -= 1;
-        document.getElementById("curr-img").textContent = currImg;
-        document.getElementById("sidebar-image").src = `./images/${selectedPin[0]}-${currImg}.jpg`;
+    if (!selectedPin || currImg <= 1) return;
 
-        // Disable at first image
-        if (currImg == 1) {
-            document.getElementById('previmg-button').disabled = true;
-        }
-
-        // Enable next button when switched
-        document.getElementById('nextimg-button').disabled = false;
-    }
+    currImg--;
+    renderSidebarMedia();
 }
 
-// Handles next image switching
 function nextImg() {
-    if (currImg < selectedPin[6]) {
-        currImg += 1;
-        document.getElementById("curr-img").textContent = currImg;
-        document.getElementById("sidebar-image").src = `./images/${selectedPin[0]}-${currImg}.jpg`;
+    if (!selectedPin || currImg >= getMediaCount(selectedPin)) return;
 
-        // Disable when at last image
-        if (currImg == selectedPin[6]) {
-            document.getElementById('nextimg-button').disabled = true;
-            document.getElementById(`button${selectedPin[0]}`).disabled = false;
-        }
-
-        // Enable previous button when switched
-        document.getElementById('previmg-button').disabled = false;
-    }
+    currImg++;
+    renderSidebarMedia();
 }
 
-// Functionality for toggling pins as found/not found
+// Mark pins as found or not found
 function markFound(pin, button) {
     const foundCount = document.getElementById("found-count");
-    const totalCount = document.getElementById("total-count");
+    const total = parseInt(document.getElementById("total-count").textContent, 10);
 
     let count = parseInt(foundCount.textContent, 10);
-    let total = parseInt(totalCount.textContent, 10);
 
-    if (pin[7] === "1") {
-        pin[7] = "0";
-        count -= 1;
+    if (pin[8] === "1") {
+        pin[8] = "0";
+        count--;
 
         button.textContent = "Mark as Found";
         button.classList.remove("found");
 
         showUnfoundMarker(pin);
-
     } else {
-        pin[7] = "1";
-        count += 1;
+        pin[8] = "1";
+        count++;
 
         button.textContent = "Mark as Not Found";
         button.classList.add("found");
@@ -194,9 +306,8 @@ function markFound(pin, button) {
     }
 
     foundCount.textContent = count;
-
-    const progressFill = document.getElementById("progress-fill");
-    progressFill.style.width = `${(count / total) * 100}%`;
+    document.getElementById("progress-fill").style.width =
+        `${total ? (count / total) * 100 : 0}%`;
 
     map.closePopup();
 }
@@ -220,9 +331,7 @@ function showFoundMarker(pin) {
     }
 
     if (hideFound) {
-        if (map.hasLayer(pin.marker)) {
-            map.removeLayer(pin.marker);
-        }
+        map.removeLayer(pin.marker);
     } else {
         pin.marker.setOpacity(0.4);
         pin.marker.setZIndexOffset(-1000);
@@ -233,41 +342,51 @@ function showFoundMarker(pin) {
     }
 }
 
-// Hide found markers handler
+// Hide found markers
 document.getElementById("hide-found-checkbox").addEventListener("change", function () {
     hideFound = this.checked;
 
     pins.forEach(function (pin) {
-        if (pin[7] === "1") {
+        if (pin[8] === "1") {
             showFoundMarker(pin);
         }
     });
 });
 
+// Image modal
 const imageModal = document.getElementById("image-modal");
-const modalImage = document.getElementById("modal-image");
+const modalMedia = document.getElementById("modal-media");
 const modalClose = document.getElementById("modal-close");
 const modalPrev = document.getElementById("modal-prev");
 const modalNext = document.getElementById("modal-next");
 const modalCounter = document.getElementById("modal-counter");
 
 function updateModalImage() {
+    if (!selectedPin) return;
 
-    if (!selectedPin) {
-        return;
-    }
+    const images = selectedPin[6] || [];
 
-    modalImage.src = `./images/${selectedPin[0]}-${currImg}.jpg`;
-    modalCounter.textContent = `${currImg} / ${selectedPin[6]}`;
+    if (currImg < 1 || currImg > images.length) return;
+
+    modalMedia.replaceChildren();
+
+    const img = document.createElement("img");
+    img.src = `images/${images[currImg - 1]}`;
+    img.alt = `Pin ${selectedPin[0]} image ${currImg}`;
+
+    modalMedia.appendChild(img);
+
+    modalCounter.textContent = `${currImg} / ${images.length}`;
     modalPrev.disabled = currImg <= 1;
-    modalNext.disabled = currImg >= selectedPin[6];
+    modalNext.disabled = currImg >= images.length;
 }
 
 function openImageModal() {
+    if (!selectedPin) return;
 
-    if (!selectedPin) {
-        return;
-    }
+    const images = selectedPin[6] || [];
+
+    if (currImg < 1 || currImg > images.length) return;
 
     updateModalImage();
     imageModal.classList.add("open");
@@ -277,78 +396,47 @@ function openImageModal() {
 function closeImageModal() {
     imageModal.classList.remove("open");
     document.body.style.overflow = "";
+    modalMedia.replaceChildren();
 }
 
 function modalPrevImg() {
-
-    if (currImg <= 1) {
-        return;
-    }
+    if (currImg <= 1) return;
 
     currImg--;
-
+    renderSidebarMedia();
     updateModalImage();
-
-    document.getElementById("curr-img").textContent = currImg;
-    document.getElementById("sidebar-image").src = `./images/${selectedPin[0]}-${currImg}.jpg`;
-    document.getElementById("previmg-button").disabled = (currImg == 1);
-    document.getElementById("nextimg-button").disabled = (currImg == selectedPin[6]);
 }
 
 function modalNextImg() {
-
-    if (currImg >= selectedPin[6]) {
-        return;
-    }
+    if (!selectedPin || currImg >= getMediaCount(selectedPin)) return;
 
     currImg++;
-
+    renderSidebarMedia();
     updateModalImage();
-
-    document.getElementById("curr-img").textContent = currImg;
-    document.getElementById("sidebar-image").src = `./images/${selectedPin[0]}-${currImg}.jpg`;
-    document.getElementById("previmg-button").disabled = (currImg == 1);
-    document.getElementById("nextimg-button").disabled = (currImg == selectedPin[6]);
-
-    if (currImg == selectedPin[6]) {
-        document.getElementById(`button${selectedPin[0]}`).disabled = false;
-    }
 }
 
 modalClose.addEventListener("click", closeImageModal);
 modalPrev.addEventListener("click", modalPrevImg);
 modalNext.addEventListener("click", modalNextImg);
 
-document
-    .getElementById("sidebar-image")
-    .addEventListener("click", openImageModal);
+document.getElementById("sidebar-media").addEventListener("click", function (event) {
+    if (event.target.tagName === "IMG") {
+        openImageModal();
+    }
+});
 
 imageModal.addEventListener("click", function (event) {
-
     if (event.target === imageModal) {
         closeImageModal();
     }
-
 });
 
 document.addEventListener("keydown", function (event) {
+    if (!imageModal.classList.contains("open")) return;
 
-    if (!imageModal.classList.contains("open")) {
-        return;
-    }
-
-    if (event.key === "Escape") {
-        closeImageModal();
-    }
-
-    if (event.key === "ArrowLeft") {
-        modalPrevImg();
-    }
-
-    if (event.key === "ArrowRight") {
-        modalNextImg();
-    }
-
+    if (event.key === "Escape") closeImageModal();
+    if (event.key === "ArrowLeft") modalPrevImg();
+    if (event.key === "ArrowRight") modalNextImg();
 });
 
 loadPins();
