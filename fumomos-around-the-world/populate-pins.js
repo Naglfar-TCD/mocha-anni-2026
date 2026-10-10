@@ -12,6 +12,51 @@ var pinIcon = L.icon({
     popupAnchor: [0, -34]
 });
 
+// save found pins to persist after reload
+const FOUND_STORAGE_KEY = "fumomos-found-v1";
+
+function loadFoundStates() {
+    try {
+        const saved = JSON.parse(
+            localStorage.getItem(FOUND_STORAGE_KEY) || "{}"
+        );
+
+        return saved && typeof saved === "object" && !Array.isArray(saved)
+            ? saved
+            : {};
+    } catch (error) {
+        console.error("Could not load saved found states:", error);
+        return {};
+    }
+}
+
+function saveFoundState(pin) {
+    try {
+        const saved = loadFoundStates();
+
+        saved[String(pin[0]).trim()] = pin[8] === "1";
+
+        localStorage.setItem(
+            FOUND_STORAGE_KEY,
+            JSON.stringify(saved)
+        );
+    } catch (error) {
+        console.error("Could not save found state:", error);
+    }
+}
+
+function applySavedFoundStates(pins) {
+    const saved = loadFoundStates();
+
+    pins.forEach(pin => {
+        const id = String(pin[0]).trim();
+
+        if (Object.prototype.hasOwnProperty.call(saved, id)) {
+            pin[8] = saved[id] ? "1" : "0";
+        }
+    });
+}
+
 // CSV: index, username, location, description, "lat,lon", image filenames, YouTube URL, optional found status
 function csvToArray(data) {
     const result = Papa.parse(data, { skipEmptyLines: true }).data;
@@ -105,22 +150,31 @@ function populatePins(pins) {
         `${pins.length ? (foundCount / pins.length) * 100 : 0}%`;
 }
 
+
 function loadPins() {
     fetch('locations.csv')
         .then(response => {
             if (!response.ok) {
-                throw new Error(`Failed to load locations.csv: ${response.status}`);
+                throw new Error(
+                    `Failed to load locations.csv: ${response.status}`
+                );
             }
+
             return response.text();
         })
         .then(csv => {
             pins = csvToArray(csv);
+
+            // Restore saved states before creating map markers.
+            applySavedFoundStates(pins);
+
             populatePins(pins);
         })
         .catch(error => {
             console.error('Error loading CSV:', error);
         });
 }
+
 
 // Update sidebar fields
 function updateSidebar(pin) {
@@ -303,6 +357,8 @@ function markFound(pin, button) {
 
         showFoundMarker(pin);
     }
+
+    saveFoundState(pin);
 
     foundCount.textContent = count;
     document.getElementById("progress-fill").style.width =
