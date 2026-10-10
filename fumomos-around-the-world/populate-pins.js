@@ -234,16 +234,16 @@ function renderSidebarMedia() {
     }
 
     if (currImg <= imageCount) {
-        // Display an image.
+        // Display an image
         const img = document.createElement("img");
         img.id = "sidebar-image";
         img.src = `images/${images[currImg - 1]}`;
-        img.alt = `Pin ${selectedPin[0]} image ${currImg}`;
+        img.alt = `${selectedPin[0]}-${currImg}`;
         img.style.cursor = "pointer";
 
         container.appendChild(img);
     } else if (videoUrl) {
-        // Display the YouTube video after the images.
+        // Display the YouTube video after the images
         const embedUrl = getYouTubeEmbedUrl(videoUrl);
 
         if (embedUrl) {
@@ -255,7 +255,7 @@ function renderSidebarMedia() {
         }
     }
 
-    // Update the sidebar media counter and navigation.
+    // Update the sidebar media counter and navigation
     document.getElementById("curr-img").textContent = currImg;
     document.getElementById("total-img").textContent =
         getMediaCount(selectedPin);
@@ -371,7 +371,7 @@ function updateModalImage() {
 
     const img = document.createElement("img");
     img.src = `images/${images[currImg - 1]}`;
-    img.alt = `Pin ${selectedPin[0]} image ${currImg}`;
+    img.alt = `${selectedPin[0]}-${currImg}`;
 
     modalMedia.appendChild(img);
 
