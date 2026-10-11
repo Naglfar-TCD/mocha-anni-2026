@@ -5,6 +5,8 @@ let hideFound = false;
 let pins = [];
 let currImg = 1;
 
+let viewedMedia = new Map();
+
 var pinIcon = L.icon({
     iconUrl: 'icons/pin-icon.png',
     iconSize: [30, 44],
@@ -102,6 +104,7 @@ function populatePins(pins) {
 
         marker.on('popupopen', function () {
             const button = document.getElementById(`button${pin[0]}`);
+            button.disabled = pin[8] !== "1";
 
             if (pin[8] === "1") {
                 button.textContent = "Mark as Not Found";
@@ -114,6 +117,10 @@ function populatePins(pins) {
             button.addEventListener('click', function () {
                 markFound(pin, button);
             });
+
+            if (selectedPin === pin) {
+                updateFoundButton();
+            }
         });
 
         marker.on('click', function () {
@@ -273,11 +280,35 @@ function renderMedia(container, pin, mediaPosition) {
     container.appendChild(img);
 }
 
+function updateFoundButton() {
+    if (!selectedPin) return;
+
+    const button = document.getElementById(`button${selectedPin[0]}`);
+    if (!button) return;
+
+    const viewed = viewedMedia.get(String(selectedPin[0])) || new Set();
+
+    button.disabled = pinIsNotFound(selectedPin) &&
+        viewed.size < getMediaCount(selectedPin);
+}
+
+function pinIsNotFound(pin) {
+    return pin[8] !== "1";
+}
+
 function renderSidebarMedia() {
     const container = document.getElementById("sidebar-media");
     container.replaceChildren();
 
     if (!selectedPin) return;
+
+    const pinId = String(selectedPin[0]);
+
+    if (!viewedMedia.has(pinId)) {
+        viewedMedia.set(pinId, new Set());
+    }
+
+    viewedMedia.get(pinId).add(currImg);
 
     const images = selectedPin[6] || [];
     const imageCount = images.length;
@@ -317,6 +348,8 @@ function renderSidebarMedia() {
     document.getElementById("previmg-button").disabled = currImg <= 1;
     document.getElementById("nextimg-button").disabled =
         currImg >= getMediaCount(selectedPin);
+
+    updateFoundButton();
 }
 
 function prevImg() {
